@@ -1,0 +1,48 @@
+import java.io.File;
+import java.net.URL;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+
+public class Sound {
+	Clip clip;
+String soundPath[] = new String[30];
+	
+	public Sound() {
+		soundPath[0] = "src/sound/correct.wav";
+		soundPath[1] = "src/sound/lose.wav";
+		soundPath[2] = "src/sound/next level.wav";
+		soundPath[3] = "src/sound/background.wav";
+		soundPath[4] = "";
+
+	}
+	public void setFile(int i) {
+		try {
+			AudioInputStream ais = AudioSystem.getAudioInputStream(new File(soundPath[i]).getAbsoluteFile());
+			clip = AudioSystem.getClip();
+			clip.open(ais);
+		}catch(Exception e) {
+			System.err.println("Error loading soudn files: " + e.getMessage());
+		}
+	}
+	public void play() {
+		this.clip.start();
+	}
+	public void loop() {
+		this.clip.loop(Clip.LOOP_CONTINUOUSLY);
+	}
+	public void stop() {
+		this.clip.stop();
+	}
+	
+	/*public static void main(String [] args) {
+		Sound sound = new Sound();
+		sound.setFile(0);
+		sound.play();
+		sound.loop();
+		/*while(true) {
+			
+		}*/
+	}
+
