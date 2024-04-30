@@ -1,0 +1,283 @@
+//Importing libaries
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Random;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public class FinalProject extends JFrame {
+    private final String[] words = {"ANYWORDS"};
+    private String word;
+    private StringBuilder guessed;
+    private int lives;
+    private boolean gameWon;
+    private final JPanel mainPanel;
+    private final JLabel hangmanLabel;
+    private final JLabel wordLabel;
+    private final JLabel messageLabel;
+    private final JButton[] letterButtons;
+    private final ArrayList<ArrayList<String>> hangmanArt = new ArrayList<>();
+    private final ImageIcon[] letterIcons;
+    private final Random random;
+
+    // ui components 
+    
+  
+    // setup ui
+    public FinalProject() {
+        super("Hangman Game");
+        setSize(800, 900);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setResizable(false);
+        setLocationRelativeTo(null);
+        
+        mainPanel = new JPanel();  // This line initializes mainPanel
+        mainPanel.setLayout(null);
+        mainPanel.setBackground(Color.WHITE);
+        getContentPane().add(mainPanel);
+        
+     // Create the UI components
+        JLabel playOptionLabel = new JLabel("                                                                                Type Normal, Bot, or Hard");
+        JTextField textField = new JTextField();
+        JButton enterButton = new JButton("Enter");
+        enterButton.setHorizontalAlignment(SwingConstants.LEFT);
+
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new GridLayout(3, 1)); // Reduce the rows to 3
+
+        inputPanel.add(playOptionLabel);
+        inputPanel.add(textField);
+        inputPanel.add(enterButton);
+
+        inputPanel.setBounds(20, 50, 960, 100); // Adjust the bounds to fit the screen
+
+        mainPanel.add(inputPanel);
+
+        enterButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String mode = textField.getText().toLowerCase();
+                if (mode.equals("normal") || mode.equals("bot") || mode.equals("hard")) {
+                    startGame();
+                    mainPanel.remove(inputPanel);
+                    mainPanel.revalidate();
+                    mainPanel.repaint();
+                } else {
+                    JOptionPane.showMessageDialog(mainPanel, "Invalid. Please enter Normal, Bot, or Hard.");
+                }
+            }
+        });
+
+
+
+        // Create a panel to hold the components
+ 
+
+        inputPanel.setLayout(new GridLayout(4, 1)); // Setting layout to GridLayout with 4 rows and 1 column
+
+        // Add components to the panel
+        
+      
+        
+        inputPanel.add(playOptionLabel);
+        inputPanel.add(textField);
+        inputPanel.add(enterButton);
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        inputPanel.setLayout(new GridLayout(4, 1));
+        inputPanel.add(playOptionLabel);
+        inputPanel.add(textField);
+        inputPanel.add(enterButton);
+        inputPanel.setBounds(3, 0, screenSize.width, screenSize.height);
+        mainPanel.add(inputPanel);
+        
+
+
+        
+        // panel setup
+        mainPanel.setLayout(null);
+        mainPanel.setBackground(Color.WHITE);
+        getContentPane().add(mainPanel);
+
+        hangmanLabel = new JLabel();
+        hangmanLabel.setBounds(150, 100, 500, 300);
+        mainPanel.add(hangmanLabel);
+
+        wordLabel = new JLabel();
+        wordLabel.setFont(new Font("Arial", Font.PLAIN, 40));
+        wordLabel.setBounds(400, 200, 500, 50);
+        mainPanel.add(wordLabel);
+
+        letterButtons = new JButton[26];
+        for (int i = 0; i < 26; i++) {
+            final char letter = (char) ('A' + i);
+            letterButtons[i] = new JButton(String.valueOf(letter));
+            letterButtons[i].addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    if (!gameWon) {
+                        handleLetter(letter);
+                    }
+                }
+            });
+            int x = 20 + (i % 13) * 50;
+            int y = 400 + (i / 13) * 50;
+            letterButtons[i].setBounds(x, y, 40, 40);
+            mainPanel.add(letterButtons[i]);
+        }
+
+        messageLabel = new JLabel();
+        messageLabel.setFont(new Font("Arial", Font.PLAIN, 30));
+        messageLabel.setForeground(Color.RED);
+        messageLabel.setBounds(200, 250, 400, 50);
+        mainPanel.add(messageLabel);
+        
+        // Hangman art
+        hangmanArt.add(new ArrayList<>(Arrays.asList(
+                "  +---+\n",
+                "  |   |\n",
+                "  O   |\n",
+                " /|\\  |\n",
+                " / \\  |\n",
+                "      |\n",
+                "=========\n"
+            )));
+            hangmanArt.add(new ArrayList<>(Arrays.asList(
+                "  +---+\n",
+                "  |   |\n",
+                "  O   |\n",
+                " /|\\  |\n",
+                " /    |\n",
+                "      |\n",
+                "=========\n"
+            )));
+            hangmanArt.add(new ArrayList<>(Arrays.asList(
+                "  +---+\n",
+                "  |   |\n",
+                "  O   |\n",
+                " /|\\  |\n",
+                "      |\n",
+                "      |\n",
+                "=========\n"
+            )));
+            hangmanArt.add(new ArrayList<>(Arrays.asList(
+                "  +---+\n",
+                "  |   |\n",
+                "  O   |\n",
+                " /|   |\n",
+                "      |\n",
+                "      |\n",
+                "=========\n"
+            )));
+            hangmanArt.add(new ArrayList<>(Arrays.asList(
+                "  +---+\n",
+                "  |   |\n",
+                "  O   |\n",
+                "  |   |\n",
+                "      |\n",
+                "      |\n",
+                "=========\n"
+            )));
+            hangmanArt.add(new ArrayList<>(Arrays.asList(
+                "   +---+\n",
+                "   |  |\n",
+                "      |\n",
+                "      |\n",
+                "      |\n",
+                "      |\n",
+                "=========\n"
+            )));
+
+        // Letter icons
+        letterIcons = new ImageIcon[26];
+        for (int i = 0; i < 26; i++) {
+            letterIcons[i] = new ImageIcon("letter" + (char) ('A' + i) + ".png");
+        }
+
+        random = new Random();
+        startGame();
+    }
+
+    private void startGame() {
+        lives = 0;
+        gameWon = false;
+        word = words[random.nextInt(words.length)];
+        guessed = new StringBuilder(word.length());
+        for (int i = 0; i < word.length(); i++) {
+            guessed.append('_');
+        }
+        updateWordLabel();
+        updateHangmanLabel();
+        clearMessage();
+    }
+
+    private void handleLetter(char letter) {
+        boolean found = false;
+        for (int i = 0; i < word.length(); i++) {
+            if (word.charAt(i) == letter) {
+                guessed.setCharAt(i, letter);
+                found = true;
+            }
+        }
+        if (!found) {
+            lives++;
+        }
+        updateWordLabel();
+        updateHangmanLabel();
+        checkWinLoss();
+    }
+
+    private void updateWordLabel() {
+        StringBuilder display = new StringBuilder();
+        for (int i = 0; i < guessed.length(); i++) {
+            display.append(guessed.charAt(i));
+            display.append(' ');
+        }
+        wordLabel.setText(display.toString());
+    }
+
+    private void updateHangmanLabel() {
+        StringBuilder stats = new StringBuilder();
+        if (lives <= 6 && (6 - (lives + 1)) < hangmanArt.size()) {
+            ArrayList<String> hangmanLines = hangmanArt.get(6 - (lives + 1));
+            for (String line : hangmanLines) {
+                stats.append(line).append("\n");
+            }
+        }
+        hangmanLabel.setText("<html><pre>" + stats.toString() + "</pre></html>");
+    }
+
+    private void clearMessage() {
+        messageLabel.setText("");
+    }
+
+    private void setMessage(String message) {
+        messageLabel.setText(message);
+    }
+
+    private void checkWinLoss() {
+        if (lives >= 6) {
+            gameLost();
+        } else if (guessed.indexOf("_") == -1) {
+            gameWon();
+        }
+    }
+
+    private void gameLost() {
+        setMessage("You lost! The word was:" + word);
+        gameWon = true;
+    }
+
+    private void gameWon() {
+        setMessage("Congratulations! You won!");
+        gameWon = true;
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new FinalProject().setVisible(true);
+            }
+        });
+    }
+}
