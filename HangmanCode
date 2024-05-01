@@ -7,7 +7,6 @@ import java.awt.event.ActionListener;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 //Comments from Win
 
@@ -26,25 +25,34 @@ public class FinalProject extends JFrame{
 	//Setting up UI (moved outside of public FinalProject because they are edited outside of it)
 	
 	JTextField TextArea;
-    JTextArea resultTextArea = new JTextArea();
+    JTextArea resultTextArea = new JTextArea();	
     JLabel playOptionTextArea = new JLabel("Do you want to play yes or no?");
     JLabel inputPromptLabel = new JLabel("Enter what mode you would like to play: Normal, Bot, Hard");
-    JButton generateButton = new JButton("Enter");
+    JButton inputButton = new JButton("Enter");
     JPanel inputPanel = new JPanel();
     
     boolean won;
     String word;
     
-	ArrayList<String> wordList = new ArrayList<String>(Arrays.asList("Horse", "Badger", "Zebra", "Elephant", "Duck", "Dog"));
+	ArrayList<String> wordList = new ArrayList<String>(Arrays.asList("Horse", "Badger", "Zebra", "Elephant", "Duck", "Dog", "Seal", "Hawk", "Cat", "Goat", "Deer",
+	"Panda", "Monkey", "Skunk", "Rabbit", "Rat", "Dolphin"));
 	
 	//Bot stuff
 	
-	ArrayList<String> botWordList = new ArrayList<String>(Arrays.asList("Horse", "Badger", "Zebra", "Elephant", "Duck", "Dog"));
-	ArrayList<String> botUsedWordList = new ArrayList<String>();
+	ArrayList<String> availableBotWordList = (ArrayList<String>) wordList.clone();
 	ArrayList<String> botLetters = new ArrayList<String>(Arrays.asList("b", "c", "d", "f","g","h","j","k","l","m","n","p","q","r","s","t","v","w","x","y","z"));
-	ArrayList<String> botUsedLetters = new ArrayList<String>();
+	ArrayList<String> availableBotLetters = (ArrayList<String>) botLetters.clone();
 	ArrayList<String> botVowels = new ArrayList<String>(Arrays.asList("a", "e", "i", "o", "u"));
-	ArrayList<String> botUsedVowels = new ArrayList<String>();
+	ArrayList<String> availableBotVowels = (ArrayList<String>) botVowels.clone();
+	ArrayList<String> availableGuaranteeCorrectBotGuess = new ArrayList();
+	
+	boolean botWon = false;
+	boolean botTurn = false;
+	boolean botCorrectlyGuessedALetter = false;
+	String botGuess = "";
+	String botWord = "";
+	
+	int incorrectBotGuess = 0;
 	
 	//Bot guesses for stat display
 	
@@ -54,8 +62,10 @@ public class FinalProject extends JFrame{
 	
     //Bot odds to guess a word in percentage
     
-    int botOddsToGuessWord = 10;
-    
+    int botOddsToGuessWord = 5;
+    int botOddsToGuessLetter = 20;
+	int botMissingCharacter = 0;
+	
     //Table to store hangman art
     
 	static ArrayList<ArrayList<String>> hangmanArt = new ArrayList<>();
@@ -80,19 +90,17 @@ public class FinalProject extends JFrame{
     
     //Random variables
     
-    String guessType;
-    String guess;
+    String guessType = "";
+    String guess = "";
     
     String mode = "";
     
-    boolean hasCorrectlyGuessedALetter = false;
+    boolean correctlyGuessedALetter = false;
     
     boolean startNewGame = true;
     boolean start = true;
     
     int lives = 7;
-    
-    
     
     public FinalProject() {
     	
@@ -125,17 +133,17 @@ public class FinalProject extends JFrame{
     	if (startNewGame == true) {
     		inputPanel.add(playOptionTextArea);
             inputPanel.add(TextArea);
-            inputPanel.add(generateButton);
+            inputPanel.add(inputButton);
     	}
     	else {
             inputPanel.add(inputPromptLabel);
             inputPanel.add(TextArea);
-            inputPanel.add(generateButton);
+            inputPanel.add(inputButton);
     	}
         
-    	//This is what happens after the button is pressed
-    	
-        generateButton.addActionListener(new ActionListener() {
+    	//This is what happens after the button is pressed    	
+    	   	
+        inputButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
             	if (startNewGame == true) {
@@ -146,9 +154,9 @@ public class FinalProject extends JFrame{
             			inputPanel.remove(playOptionTextArea);
             			inputPanel.add(inputPromptLabel);
             			inputPanel.remove(TextArea);
-            			inputPanel.remove(generateButton);
+            			inputPanel.remove(inputButton);
                         inputPanel.add(TextArea);
-                        inputPanel.add(generateButton);
+                        inputPanel.add(inputButton);
                         resultTextArea.setText("");
                         TextArea.setText("");
             			inputPanel.revalidate();
@@ -195,9 +203,11 @@ public class FinalProject extends JFrame{
     	
     	System.out.println("Starting a new game");
     	
+    	System.out.println("Assigning new word");
+    	
     	//Picks random word
     	
-    	int number = randomNum.nextInt(wordList.size());
+    	int number = ((int) (Math.random() * wordList.size()));
 		word = wordList.get(number);
 		
 		//Makes sure that word does not reappear before three games		
@@ -237,6 +247,8 @@ public class FinalProject extends JFrame{
 		
 		System.out.println(correctGuessedLetters);
 		
+		System.out.println("The word is: " + word);
+		
     }
     
     private void PickMode() {
@@ -264,10 +276,17 @@ public class FinalProject extends JFrame{
 			//Adds the empty slot for the Bot to guess, same as player
 			
 			if (mode.equals("bot")) {
-				for (int i = 0; i < word.length(); i++) {
+				
+				System.out.println("Assigning bot word");
+				
+				botWord = wordList.get(Math.abs(randomNum.nextInt(wordList.size())));
+				
+				for (int i = 0; i < botWord.length(); i++) {
 					botCorrectGuessedLetters.add("_");
+					availableGuaranteeCorrectBotGuess.add(String.valueOf(botWord.charAt(i)).toLowerCase());
 				}
 				System.out.println(botCorrectGuessedLetters);
+				System.out.println(botWord);
 			}
 			
 			inputPromptLabel.setText("Enter if you want to guess word or letter:");
@@ -305,15 +324,19 @@ public class FinalProject extends JFrame{
         	
         	else if (guessType.equals("word") || guessType.equals("letter")) {
         		
+        		System.out.println("Pass guess type");
+        		
+                HangmanImage();
+        		
         		//Runs if player entered word
         		
                 if (guessType.equals("word")) {
                     inputPromptLabel.setText("Enter the word that you would like to guess");	
-                }
-                
-                //Runs if player entered letter
-                
+                }                
                 else {
+                	
+                    //Runs if player entered letter
+                	
                     inputPromptLabel.setText("Enter the letter that you would like to guess");
                 }
         	}
@@ -385,7 +408,6 @@ public class FinalProject extends JFrame{
     			
     			//Displays stats
     			
-    			stats.delete(0, stats.length());
 				HangmanImage();
 				
     		}
@@ -398,7 +420,6 @@ public class FinalProject extends JFrame{
     			
     			if (guess.length() != 1){
     				inputPromptLabel.setText("Enter the letter that you would like to guess");
-    				stats.delete(0, stats.length());
     				stats.append("You entered more than 1 letter\n");
     				HangmanImage();
     			}
@@ -423,7 +444,6 @@ public class FinalProject extends JFrame{
         					if (guess.charAt(0) == (alreadyGuessedLetters.get(i).charAt(0))) {
         						alreadyGuessed = true;
         	    				inputPromptLabel.setText("Enter the letter that you would like to guess");
-        	    				stats.delete(0, stats.length());
         	    				stats.append("You already tried this letter before\n");
         	    				HangmanImage();
         						break;
@@ -463,8 +483,11 @@ public class FinalProject extends JFrame{
         						
         						//Adds to the alreadyGuessedLetters table and sets correctGuess to true, if correctGuess is false then a life will be taken
         						
-        						alreadyGuessedLetters.add(guess);
+        						if (alreadyGuessedLetters.contains(guess) == false) {
+        							alreadyGuessedLetters.add(guess);	
+        						}
         						correctGuess = true;
+        						
         					}
         					
         				}
@@ -495,19 +518,22 @@ public class FinalProject extends JFrame{
             				}
         				}
         				
-        				//Displays stats
+        				CheckIfCorrectLetter(guess);
         				
-        				stats.delete(0,  stats.length());
-    					HangmanImage();
-    					
-    					//Runs if the Player didn't win and its the bot's turn
+    					//Runs if the Player didn't win 
     					
     					if (won == false) {
+    						
+    						//Run bot's turn if mode is bot
+    						
     				    	if (mode.equals("bot")) {
     				    		
     				    		System.out.println("Bot's turn");
     				    		
     				    		BotTurn();
+    				    	}    				    	
+    				    	else{
+    				    		HangmanImage();
     				    	}
     					}
     					
@@ -515,6 +541,8 @@ public class FinalProject extends JFrame{
     			}
     		}
     	}
+
+    	
     	TextArea.setText("");
     	System.out.println("Cleared");
     	
@@ -522,64 +550,191 @@ public class FinalProject extends JFrame{
     
     private void BotTurn() {
     	
-    	//Not working right now
-    	
     	System.out.println("Bot run");
     	
     	int botChoice = (int) (Math.random() * 100);
     	
+    	//Debugging guarantee bot to guess word
+    	
+    	//botOddsToGuessWord = 100;
+    	
+    	//
+    	
+    	//System.out.println(botChoice);
+    	//System.out.println(100 - botOddsToGuessWord);
+    	
+		for (int i = 0; i < botWord.length(); i++) {
+			
+			//System.out.println("Letter at i: " + (botCorrectGuessedLetters.get(i)));
+			
+			if (botCorrectGuessedLetters.get(i) == "_") {
+				botMissingCharacter++;
+			}
+		}
+		
+		//60 is the percentage of the word that is correct in order for the bot to be able to more accurately guess the word
+		
+		//System.out.println("Bot missing character: " + botMissingCharacter);
+		
+		//System.out.println("Bot length - Bot missing character : " + (botWord.length() - botMissingCharacter));
+		
+		//System.out.println("Bot length: " + botWord.length());
+		
+		//System.out.println("60% length of bot word is: " + ((float) botWord.length() / 100) * 60);
+				
+		if ( (float) (botWord.length() - botMissingCharacter) >= ((float) botWord.length() / 100) * 60) {
+				
+				//System.out.println("Add odds for bot to guess word");
+				
+				botOddsToGuessWord += 60;
+		}
+    	
+		System.out.println("Bot odds to guess word: " + botOddsToGuessWord);
+		
     	if (botChoice <= (100 - botOddsToGuessWord)) {
     		
     		//Alphabet
     		
     		int botLetterChoice = (int) (Math.random() * 100);
     		
-    		if (botLetterChoice <= 80) {
+    		if (botLetterChoice <= (100 - botOddsToGuessLetter) && availableBotVowels.size() != 0) {
     			
     			//Vowel
     			
-    			int randomNumber = randomNum.nextInt(botVowels.size());
-    			
-    			String randomVowel = botVowels.get(randomNumber);
-    			
-    			botVowels.remove(randomNumber);
-    			
-    			botUsedVowels.add(randomVowel);
-    			
-    			
+    			botGuess = availableBotVowels.get((int) (Math.random() * availableBotVowels.size()));
+    			    			
     		}
-    		else {
+    		else if (availableBotLetters.size() != 0) {
     			
-    			int randomNumber = randomNum.nextInt(botLetters.size());
+    			//Letter
     			
-    			String randomLetter = botLetters.get(randomNumber);
-    			
-    			botLetters.remove(randomNumber);
-    			
-    			botUsedLetters.add(randomLetter);
+    			botGuess = availableBotLetters.get((int) (Math.random() * availableBotLetters.size()));
+    			    			
+    			if (botOddsToGuessLetter == 100) {
+    				botOddsToGuessLetter = 20;
+    			}
     			
     		}
     		
+    		botOddsToGuessWord += 5;
+    		
+			System.out.println("Check if bot guess is correct");
+			
+			BotCheckIfCorrectLetter();
+			
     	}
-    	else {
+    	else if (availableBotWordList.size() != 0) {
     		
     		//Word
     		
-    		int randomNumber = randomNum.nextInt(botWordList.size());
+    		if (botOddsToGuessWord == 100) {
+    			botOddsToGuessWord = 5;
+    		}
+    		else if (botOddsToGuessWord != 5) {
+    			
+    			if (botOddsToGuessWord - 20 <= 0) {
+    				botOddsToGuessWord = 5;
+    			}
+    			else {
+        			botOddsToGuessWord -= 20;
+    			}
+    			
+    		}
+    		    		
+    		botGuess = availableBotWordList.get((int) (Math.random() * availableBotWordList.size()));
     		
-			String randomWord = botWordList.get(randomNumber);
-			
-			botWordList.remove(randomNumber);
-			
-			botUsedWordList.add(randomWord);
+    		//debugging
     		
-			botOddsToGuessWord = 10;
+			//botGuess = botWord;
 			
+			//
+    		
+    		//60 is the percentage of the word that is correct in order for the bot to be able to more accurately guess the word
+    		
+    		if ((float) (botWord.length() - botMissingCharacter) >= ((float) botWord.length() / 100) * 60) {
+    			
+    			//70 is the chance that the bot guesses the right word
+    			
+    			if (((int) Math.random() * 100) <= 70) {
+    				botGuess = botWord;
+    			}
+    			else {
+    				
+    				botOddsToGuessWord += 60;
+    			}
+    		}
+			
+			if (botGuess.equals(botWord)) {
+				botWon = true;
+				lives = 0;
+	    		for (int i = 0; i < botWord.length(); i++) {
+	    			botCorrectGuessedLetters.set(i, String.valueOf(botWord.charAt(i)));
+	    		}
+	    		botAlreadyGuessedWords.add(botGuess);
+				availableBotWordList.remove(botGuess);
+				
+				DisplayStats();	
+				
+			}
+			else if (botWord.length() >= 5 && incorrectBotGuess == 2 || botWord.length() < 5 && incorrectBotGuess == 3){
+				
+	    		botGuess = availableGuaranteeCorrectBotGuess.get((int) Math.random() * availableGuaranteeCorrectBotGuess.size());
+	    		
+	    		availableGuaranteeCorrectBotGuess.remove(botGuess);
+	    		
+	    		
+	    		System.out.println("Bot guess change from letter to: " + botGuess);
+	    		System.out.println("Guarantee guess has been removed: " + botGuess);
+	    		System.out.println("CHECK 1");
+	    		System.out.println("CHECK 1.1");
+	    		
+	    		incorrectBotGuess = 0;
+
+	    		Remove();
+	    		
+	    		BotCheckIfCorrectLetter();
+	    		
+			}
+			else {
+				
+				incorrectBotGuess += 1;
+								
+				if (botWord.length() >= 5 && incorrectBotGuess == 2 || botWord.length() < 5 && incorrectBotGuess == 3){
+					
+		    		botGuess = availableGuaranteeCorrectBotGuess.get((int) Math.random() * availableGuaranteeCorrectBotGuess.size());
+		    		
+		    		System.out.println("Bot guess change from word to: " + botGuess);
+		    		System.out.println("Guarantee guess has been removed: " + botGuess);
+		    		System.out.println("CHECK 2");
+		    		System.out.println("CHECK 1.2");
+		    		
+		    		incorrectBotGuess = 0;
+		    		
+		    		Remove();
+		    				    		
+		    		BotCheckIfCorrectLetter();
+				}
+				else {
+					
+					System.out.println("Bot incorect guess chain is: " + incorrectBotGuess);
+					
+		    		botAlreadyGuessedWords.add(botGuess);
+		    		
+					availableBotWordList.remove(botGuess);
+					
+					DisplayStats();	
+				}
+							
+			}
+						
     	}
     	
-    	System.out.println(botUsedLetters);
-    	System.out.println(botUsedVowels);
-    	System.out.println(botUsedWordList);
+    	botMissingCharacter = 0;
+    	
+    	System.out.println("The bot's guess is: " + botGuess);
+    	System.out.println(availableBotLetters);
+    	System.out.println(availableBotVowels);
+    	System.out.println(availableBotWordList);
     	
     }
     
@@ -597,21 +752,24 @@ public class FinalProject extends JFrame{
     	
     	//Runs to see if the player has filled in all letters
 		if (guess.length() == 1) {
-			CheckIfCorrectLetter();
+			CheckIfCorrectLetter(guess);
 		}
 		
 		//Reason for (hasCorrectlyGuessedALetter == true || won == true) is because the player may just win by guessing the word and not entering a letter so this is just a preference
 		
 		//Adds the tables to stat which is then displayed as one big text
 		
-		if (hasCorrectlyGuessedALetter == true || won == true) {
-			stats.append("You have correctly guessed these letters: " + correctGuessedLetters.toString() + "\n");
-		}
-		if (alreadyGuessedWords.size() != 0) {
-			stats.append("You have already guessed these words: " + alreadyGuessedWords.toString() + "\n");	
-		}
-		if (alreadyGuessedLetters.size() != 0) {
-			stats.append("You have already guessed these letters: " + alreadyGuessedLetters.toString() + "\n");	
+
+		stats.append("\nYou have correctly guessed these letters " + correctGuessedLetters.toString() + "\n");
+		stats.append("You have already guessed these words: " + alreadyGuessedWords.toString() + "\n");	
+		stats.append("You have already guessed these letters: " + alreadyGuessedLetters.toString() + "\n");	
+		
+		if (mode.equals("bot")) {
+			
+			stats.append("\nThe bot has correctly guessed these letters: " + botCorrectGuessedLetters.toString() + "\n");
+			stats.append("The bot has already guessed these words: " + botAlreadyGuessedWords.toString() + "\n");	
+			stats.append("The bot has already guessed these letters: " + botAlreadyGuessedLetters.toString() + "\n");	
+			
 		}
 		
 		stats.append("You have " + lives + " lives left");
@@ -632,7 +790,127 @@ public class FinalProject extends JFrame{
 		
     }
     
-    private void CheckIfCorrectLetter() {
+    private void BotCheckIfCorrectLetter() {
+    	
+    	System.out.println("bot check correct letter run");
+    	
+    	System.out.println(botGuess);
+    	    	
+    	System.out.println("Pre Bot incorect guess chain is: " + incorrectBotGuess);
+    	
+    	GuaranteeCorrectBotGuess(botGuess);
+    	System.out.println("CHECK 3");
+    	System.out.println("CHECK 1.3");
+    	
+    	CheckIfLetterInWord(botGuess);
+    	
+    	System.out.println("Bot correctly guessed a letter is: " + botCorrectlyGuessedALetter);
+    	
+    	if (botCorrectlyGuessedALetter == false) {
+    		
+    		incorrectBotGuess += 1;
+    	
+        	System.out.println("Post Bot incorect guess chain is: " + incorrectBotGuess);
+    		
+        	System.out.println(botWord.length());
+        	System.out.println(botWord.length() >= 5 && incorrectBotGuess == 1);
+        	System.out.println(botWord.length() < 5 && incorrectBotGuess == 2);
+        	
+        	GuaranteeCorrectBotGuess(botGuess);
+        	
+        	System.out.println("CHECK 4");
+        	System.out.println("CHECK 1.4");
+        	
+    	}    	
+    	else if (botVowels.contains(botGuess)) {
+    		
+			botOddsToGuessLetter += 20;
+			
+    	}
+    	
+    	CheckIfLetterInWord(botGuess); 
+		
+    	System.out.println("PRE ENTER ALREADY GUESSED: " + botGuess);
+    	
+    	if (botAlreadyGuessedLetters.contains(botGuess) == false) {
+        	botAlreadyGuessedLetters.add(botGuess);
+    	}
+    	
+    	botCorrectlyGuessedALetter = false;
+    	
+		for (int i = 0; i < botWord.length(); i++) {
+			
+			if (botCorrectGuessedLetters.get(i).equalsIgnoreCase(Character.toString(botWord.charAt(i))) == false){
+				break;
+			}
+			
+			if (i + 1 == botWord.length()) {
+				botWon = true;
+			}
+				
+		}
+		
+		Remove();
+		
+		HangmanImage();
+		
+    }
+    
+    public void GuaranteeCorrectBotGuess(String letter) {
+    	
+    	if (botWord.length() >= 5 && incorrectBotGuess == 2 || botWord.length() < 5 && incorrectBotGuess == 3) {
+    		
+    		letter = availableGuaranteeCorrectBotGuess.get((int) Math.random() * availableGuaranteeCorrectBotGuess.size());
+    		
+    		System.out.println("Bot guess has been changed from: " + botGuess + " to: " + letter);
+    		System.out.println("Guarantee guess has been removed: " + letter);
+    		
+    		Remove();
+    		        		
+    		botGuess = letter;
+    		
+    		incorrectBotGuess = 0;
+    		
+    		CheckIfLetterInWord(letter);
+    	}
+    	
+    }
+    
+    public void Remove() {
+		if (availableGuaranteeCorrectBotGuess.contains(botGuess)) {
+			availableGuaranteeCorrectBotGuess.remove(botGuess);
+		}
+		if (availableBotVowels.contains(botGuess)) {
+			availableBotVowels.remove(botGuess);
+		}
+		else if (availableBotLetters.contains(botGuess)) {
+			availableBotLetters.remove(botGuess);
+		}
+    }
+    
+    public void CheckIfLetterInWord(String letter) {
+    	
+    	for (int i = 0; i < botWord.length(); i++) {
+    		
+			if (letter.charAt(0) == botWord.toLowerCase().charAt(i)) {
+				
+				if (i == 0) {
+					botCorrectGuessedLetters.set(i, letter.toUpperCase());
+				}
+				else {
+					botCorrectGuessedLetters.set(i, letter);	
+				}
+				
+				botCorrectlyGuessedALetter = true;	
+				
+			}
+			
+		}  
+    	
+    }
+    
+    
+    private void CheckIfCorrectLetter(String letter) {
     	
     	//Checks if this letter guess is correct because if (hasCorrectlyGuessedALetter = false) then lives will be deducted 
     	//hasCorrectlyGuessedALetter is false by default and gets reset each time
@@ -645,19 +923,22 @@ public class FinalProject extends JFrame{
     		
     		//Puts letters into all their correct slots e.g. e_epha_t
     		
-			if (guess.charAt(0) == word.toLowerCase().charAt(i)) {
-				
+			if (letter.charAt(0) == word.toLowerCase().charAt(i)) {
+								
 				if (i == 0) {
-					correctGuessedLetters.set(i, guess.toUpperCase());
+					correctGuessedLetters.set(i, letter.toUpperCase());
 				}
 				else {
-					correctGuessedLetters.set(i, guess);	
+					correctGuessedLetters.set(i, letter);	
 				}
-				hasCorrectlyGuessedALetter = true;
+				
+				correctlyGuessedALetter = true;	
+						
 			}
 		}
     	
     	//Checks if all letters have been correctly guessed or not
+
     	
 		for (int i = 0; i < word.length(); i++) {
 			
@@ -667,7 +948,7 @@ public class FinalProject extends JFrame{
 			System.out.println(Character.toString(word.charAt(i)));
 			
 			//Breaks out of for loop if all of the letters are not correct
-			
+
 			if (correctGuessedLetters.get(i).equalsIgnoreCase(Character.toString(word.charAt(i))) == false){
 				break;
 			}
@@ -677,11 +958,12 @@ public class FinalProject extends JFrame{
 			if (i + 1 == word.length()) {
 				won = true;
 			}
+				
 		}
 		
     }
     
-    private void CheckIfWonOrLost() {
+	private void CheckIfWonOrLost() {
     	
     	//Debugging
     	
@@ -692,6 +974,8 @@ public class FinalProject extends JFrame{
     	
     	if (won == true || lives == 0) {
     		
+    		System.out.println("Player lost");
+    		
     		//Runs if player run out of lives
     		
     		if (lives == 0 && won == false) {
@@ -699,29 +983,60 @@ public class FinalProject extends JFrame{
     			//Player Lost
     			
         		stats.append("\nYou lost!");
-        		stats.append("\nThe correct word was: " + word);
+        		
+        		if (mode.equals("bot")) {
+        			stats.append("\nYour word was: " + word);
+        			stats.append("\nThe bot's word was: " + botWord);
+        		}
+        		else {
+        			stats.append("\nThe correct word was: " + word);
+        		}
+        		
     		}
-    		
-    		//Runs if player wins
     		
     		else {
     			
-    			//Player Won
+    			//Runs if player wins
     			
-        		stats.append("\nYou won!");	
-    		}
-    		    		
-    		//Resetting Bot stuff
-    		
-    		if (mode.equals("bot")) {
-        		botOddsToGuessWord = 10;	
-    		}
-    		
-    		//Resetting Player stuff
-    		
+        		System.out.println("Player won");
+    			
+	    			//Player Won
+	    			
+	        		stats.append("\nYou won!");	
+	    		}
+	    		    		
+	    		//Resetting Bot stuff
+	    		
+	    		if (mode.equals("bot")) {
+	    			
+	        		botOddsToGuessWord = 5;
+	        		botOddsToGuessLetter = 20;
+	        		botMissingCharacter = 0;
+	        		incorrectBotGuess = 0;
+	        		
+	        		botWon = false;
+	        		botTurn = false;
+	        		botCorrectlyGuessedALetter = false;
+	        		botGuess = "";
+	        		
+	        		availableBotWordList = (ArrayList<String>) wordList.clone();
+	        		availableBotLetters = (ArrayList<String>) botLetters.clone();
+	        		availableBotVowels = (ArrayList<String>) botVowels.clone();
+	        		availableGuaranteeCorrectBotGuess.clear();
+	        		
+	        		botAlreadyGuessedLetters.clear();
+	            	botAlreadyGuessedWords.clear();
+	            	botCorrectGuessedLetters.clear();
+	        		
+	    		}
+	    		
+	    		//Resetting Player stuff
+	    	
+	    	guess = "";
+	    	guessType = "";
     		startNewGame = true;
     		won = false;
-    		hasCorrectlyGuessedALetter = false;
+    		correctlyGuessedALetter = false;
     		start = true;
     		mode = "";
     		lives = 7;
@@ -733,12 +1048,12 @@ public class FinalProject extends JFrame{
         	correctGuessedLetters.clear();
         	inputPromptLabel.setText("Enter what mode you would like to play: Normal, Bot, Hard");
         	inputPanel.remove(inputPromptLabel);
-        	inputPanel.remove(generateButton);
+        	inputPanel.remove(inputButton);
         	inputPanel.add(playOptionTextArea);
         	inputPanel.add(TextArea);
         	TextArea.setText("");
         	resultTextArea.setText(stats.toString());
-        	inputPanel.add(generateButton);
+        	inputPanel.add(inputButton);
 			inputPanel.revalidate();
 			inputPanel.repaint();
 			
@@ -753,15 +1068,24 @@ public class FinalProject extends JFrame{
     		
     		//Player neither won or loss
     		
+    		System.out.println("Cleared stats 2");
+    		
+    		stats.delete(0, stats.length());
+    		
     		inputPromptLabel.setText("Enter if you want to guess word or letter:");
+    		
     	}
     }
     
     private void HangmanImage() {
     	
+    	System.out.println("Hangman image ran");
+    	
 		//Displays hangman art if player lives are below 7
     	
     	if (lives != 7) {
+    		
+    		System.out.println("Lives is: " + lives);
     		
         	stats.append(hangmanArt.get(7 - (lives + 1)).toString());	
     	}
@@ -784,6 +1108,16 @@ public class FinalProject extends JFrame{
         });
         
         //Appends hangman UI into hangmanArt Array because I don't know how to hard set tables into array list
+
+        hangmanArt.add(new ArrayList<>(Arrays.asList(
+                "   +---+\n",
+                "  |   |\n",
+                "      |\n",
+                "      |\n",
+                "      |\n",
+                "      |\n",
+                "=========\n"
+        )));
         
         hangmanArt.add(new ArrayList<>(Arrays.asList(
                 "   +---+\n",
